@@ -1,0 +1,12 @@
+# Configuration for experiment2
+experiment:
+  name: "experiment2"
+  description: "TODO: Add experiment description"
+  
+hyperparameters:
+  learning_rate: 0.001
+  batch_size: 32
+  # Add more hyperparameters here
+
+notes: |
+  TODO: Add experiment notes and observations

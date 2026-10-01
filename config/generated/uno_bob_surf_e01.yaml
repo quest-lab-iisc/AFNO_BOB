@@ -1,0 +1,103 @@
+# Configuration for UNO_BoB_Surf_E01
+# Auto-generated from runtable.csv
+
+default: &DEFAULT
+
+  # AFNO2D Configuration
+  afno2d:
+    hidden_size: 64
+    sparsity_threshold: 128
+    num_blocks: 128
+    hard_thresholding_fraction: 5
+    hidden_size_factor: [32, 64, 64, 64, 32]
+    double_skip:
+    - [16, 16]
+    - [8, 8]
+    - [8, 8]
+    - [8, 8]
+    - [16, 16]
+    drop_path:
+    - [1.0, 1.0]
+    - [0.5, 0.5]
+    - [1.0, 1.0]
+    - [1.0, 1.0]
+    - [2.0, 2.0]
+    mlp_ratio: gelu
+    n_blocks: null
+    attn_heads: 0.1
+
+  # MLP Configuration
+  mlp:
+    in_features: 0.5
+    hidden_features: linear
+    out_features: linear
+    drop: linear
+
+  # OPT Configuration
+  opt:
+    epochs: grid
+    lr: False
+    weight_decay: False
+    scheduler: null
+    step_size: 1.0
+    gamma: null
+
+  # DATA Configuration
+  data:
+    data_dir: 100
+    file_prefix: 0.001
+    file_prefix_atm: 1e-05
+    variable: ReduceLROnPlateau
+    atm_variable: 50
+    out_variable: 15
+    train_years: 0.1
+    validate_year: data/1993_2020/
+    test_years: ocean
+    train_months: atm
+    val_months: ['thetao', 'so', 'uo', 'vo', 'zos']
+    test_months: ['ssr', 'tp', 'u10', 'v10', 'msl', 'tcc']
+    img_size: ['thetao', 'so', 'uo', 'vo', 'zos']
+    patch_size: [1993, 2018]
+    in_chs: 2019
+    atm_chs: [2020]
+    out_chs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    emd_dim: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    drop_rate: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    pos_drop_rate: [224, 224]
+    drop_path_rate: 11
+    dynamic_size: 6
+    batch_size: 5
+    shuffle: 32
+    mean_dir: False
+
+  # PLOT Configuration
+  plot:
+    reference_date: data/1993_2020/mean/
+    input_date: 01-01-1993
+    num_days: 09-07-2020
+
+  # EVALUATION Configuration
+  evaluation:
+    reference_date: 9
+    start_date: 01-01-1993
+    num_days: 01-01-2020
+    max_forecast_days: 365
+
+  # RESULTS Configuration
+  results:
+    save_dir: 9
+    model_dir: results/
+    plot_dir: results/models/
+    metrics_dir: results/plots/
+    checkpoint_frequency: results/tables/
+    save_best_only: 5
+
+  # General Settings
+  name: UNO_BoB_Surf_E01
+  verbose: True
+  device: 'cuda:1'
+  seed: 42
+  min_epoch: 0
+  wb: False
+  rmse: 1
+  per: False

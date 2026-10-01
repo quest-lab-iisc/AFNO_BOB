@@ -1,0 +1,111 @@
+# E04: TFNO with 3-step autoregressive rollout training, north_mask_rows=0
+# Mirrors the AFNO RT (E14) strategy applied to the TFNO architecture.
+# Architecture identical to E03; only the training objective changes.
+default : &DEFAULT
+
+  # General Settings
+  name: 'TFNO_BoB_Surf_E04'
+  verbose: True
+  device: 'cuda:0'
+  seed: 42
+  min_epoch: 0
+  wb: False
+  rmse: 1
+  per: False
+
+  # Model Architecture - TFNO (identical to E03)
+  tfno:
+    n_modes: [16, 16]
+    hidden_channels: 64
+    lifting_channel_ratio: 2
+    projection_channel_ratio: 2
+    n_layers: 4
+    factorization: 'Tucker'
+    rank: 0.1
+    non_linearity: 'gelu'
+    norm: null
+    use_channel_mlp: True
+    channel_mlp_expansion: 0.5
+    channel_mlp_dropout: 0.1
+    channel_mlp_skip: 'soft-gating'
+    fno_skip: 'linear'
+    positional_embedding: 'grid'
+
+  # Optimizer Settings
+  opt:
+    epochs: 250
+    lr: 1e-3
+    weight_decay: 1e-5
+    scheduler: 'ReduceLROnPlateau'
+    scheduler_T_max: 50
+    step_size: 15
+    gamma: 0.1
+
+  # Dataset Configuration
+  data:
+    data_dir: "data/1993_2020/"
+    file_prefix: ocean
+    file_prefix_atm: atm
+
+    variable: ['thetao','so','uo','vo','zos']
+    atm_variable: ['ssr','tp','u10','v10','msl','tcc']
+    out_variable: ['thetao','so','uo','vo','zos']
+
+    train_years: [1993, 2018]
+    validate_year: 2019
+    test_years: [2020]
+
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    img_size: [224, 224]
+    north_mask_rows: 0
+
+    in_chs: 11
+    atm_chs: 6
+    out_chs: 5
+
+    batch_size: 32
+    shuffle: False
+
+    mean_dir: "data/1993_2020/mean/"
+
+  # Plotting Configuration
+  plot:
+    reference_date: "01-01-1993"
+    input_date: "09-07-2020"
+    num_days: 9
+
+  # Model Evaluation Configuration
+  evaluation:
+    reference_date: "01-01-1993"
+    start_date: "01-01-2020"
+    num_days: 365
+    max_forecast_days: 9
+
+  # Results and Checkpointing
+  results:
+    save_dir: "results/"
+    model_dir: "results/models/"
+    plot_dir: "results/plots/"
+    metrics_dir: "results/tables/"
+    checkpoint_frequency: 5
+    save_best_only: True
+    resume_checkpoint: null
+
+  # Visualization Configuration
+  visualization:
+    use_default: True
+    vmin:
+      thetao: 28.0
+      so: 32.0
+      uo: -0.5
+      vo: -0.5
+      zos: -0.5
+    vmax:
+      thetao: 31.0
+      so: 35.0
+      uo: 0.5
+      vo: 0.5
+      zos: 0.5

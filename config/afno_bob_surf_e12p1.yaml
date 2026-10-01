@@ -1,0 +1,95 @@
+# E12p1: Resume E12 (epoch 149) for 100 additional epochs
+
+default: &DEFAULT
+
+  # General Settings
+  name: AFNO_BoB_Surf_E12p1
+  verbose: True
+  device: 'cuda:0'
+  seed: 42
+  min_epoch: 0
+  wb: False
+  rmse: 1
+  per: False
+
+  # Model Architecture - AFNO2D
+  afno2d:
+    hidden_size: 768
+    sparsity_threshold: 0.01
+    num_blocks: 8
+    hard_thresholding_fraction: 1
+    hidden_size_factor: 1
+    double_skip: True
+    drop_path: 0
+    mlp_ratio: 4
+    n_blocks: 3
+    attn_heads: 8
+
+  # MLP Configuration
+  mlp:
+    in_features: 768
+    hidden_features: 3072
+    out_features: 768
+    drop: 0.1
+
+  # Optimizer Settings
+  opt:
+    epochs: 100
+    lr: 0.001
+    weight_decay: 1e-05
+    scheduler: ReduceLROnPlateau
+    step_size: 15
+    gamma: 0.1
+
+  # Dataset Configuration
+  data:
+    data_dir: 'data/1993_2020/'
+    file_prefix: ocean
+    file_prefix_atm: atm
+    variable: ['thetao', 'so', 'uo', 'vo', 'zos']
+    atm_variable: ['ssr', 'tp', 'u10', 'v10', 'msl', 'tcc']
+    out_variable: ['thetao', 'so', 'uo', 'vo', 'zos']
+    train_years: [1993, 2018]
+    validate_year: 2019
+    test_years: [2020]
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    img_size: [224, 224]
+    north_mask_rows: 20
+    patch_size: [8, 8]
+    in_chs: 11
+    atm_chs: 6
+    out_chs: 5
+    emd_dim: 768
+    drop_rate: 0
+    pos_drop_rate: 0
+    drop_path_rate: 0
+    dynamic_size: True
+    batch_size: 32
+    shuffle: False
+    mean_dir: 'data/1993_2020/mean/'
+
+  # Plotting Configuration
+  plot:
+    reference_date: 01-01-1993
+    input_date: 09-07-2020
+    num_days: 9
+
+  # Model Evaluation Configuration
+  evaluation:
+    reference_date: 01-01-1993
+    start_date: 01-01-2020
+    num_days: 365
+    max_forecast_days: 9
+
+  # Results and Checkpointing
+  results:
+    save_dir: results/
+    model_dir: results/models/
+    plot_dir: results/plots/
+    metrics_dir: results/tables/
+    checkpoint_frequency: 5
+    save_best_only: True
+
+    resume_checkpoint: results/models/checkpoint_AFNO_BoB_Surf_E12.pth

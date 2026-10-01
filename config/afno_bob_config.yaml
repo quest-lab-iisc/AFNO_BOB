@@ -1,0 +1,144 @@
+default : &DEFAULT
+
+  # General Settings
+  name: 'AFNO_BoB_Surf_E10'  # Experiment name
+  verbose: True
+  device: 'cuda:0'  # Device to use for training/testing
+  seed: 42
+  min_epoch: 0
+  wb: False  # Weights & Biases logging
+  rmse: 1
+  per: False
+  
+
+  # Model Architecture - AFNO2D
+  afno2d:
+    hidden_size: 192
+    sparsity_threshold: 0.01
+    num_blocks: 3
+    hard_thresholding_fraction: 1
+    hidden_size_factor: 1
+    double_skip: True
+    drop_path: 0
+    mlp_ratio: 2
+    n_blocks: 3
+    attn_heads: 4
+
+  # MLP Configuration
+  mlp:
+    in_features: 192
+    hidden_features: 768
+    out_features: 192
+    drop: 0.1
+
+  # Optimizer Settings
+  opt:
+    epochs: 100
+    lr: 1e-3
+    weight_decay: 1e-5
+    scheduler: 'ReduceLROnPlateau'
+    step_size: 15
+    gamma: 0.1
+
+  # Dataset Configuration
+  data:
+    # Use absolute paths to source data (no need to copy files)
+    data_dir: "data/1993_2020/"
+    file_prefix: ocean
+    file_prefix_atm: atm
+
+    # Variables
+    variable: ['thetao','so','uo','vo','zos']
+    atm_variable: ['ssr','tp','u10','v10','msl','tcc']
+    out_variable: ['thetao','so','uo','vo','zos']
+
+    # *** ENHANCED: Data split by years ***
+    train_years: [1993, 2018]  # Training data year range [start, end] inclusive
+    validate_year: 2019         # Validation year
+    test_years: [2020]          # Test years (list allows multiple test years)
+
+    # Select specific months (1-12) for each split, or use all months
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    # Spatial configuration
+    img_size: [224,224]
+    north_mask_rows: 20
+    patch_size: [8,8]
+
+    # Channel configuration
+    in_chs: 11      # 6 atmospheric + 5 ocean
+    atm_chs: 6
+    out_chs: 5
+
+    # Model configuration
+    emd_dim: 192
+    drop_rate: 0
+    pos_drop_rate: 0
+    drop_path_rate: 0
+    dynamic_size: True
+
+    # Training configuration
+    batch_size: 32
+    shuffle: False
+
+    # Normalization statistics (absolute path to source)
+    mean_dir: "data/1993_2020/mean/"
+
+  # Plotting Configuration
+  plot:
+    # Reference date (first day in dataset) - DO NOT CHANGE
+    reference_date: "01-01-1993"  # Format: dd-mm-yyyy
+
+    # Input date for plotting (format: dd-mm-yyyy)
+    # This will be converted to day index relative to reference_date
+    # Used for: predictions, ocean variables, and all visualizations
+    input_date: "09-07-2020"  # Example: corresponds to day index 10021
+
+    # Number of days for autoregressive prediction
+    num_days: 9
+
+  # Model Evaluation Configuration
+  evaluation:
+    # Reference date for day index calculation (first day in dataset)
+    reference_date: "01-01-1993"  # Format: dd-mm-yyyy
+
+    # Evaluation period
+    # start_date: Starting date for evaluation (format: dd-mm-yyyy)
+    # This will be converted to day index relative to reference_date
+    start_date: "01-01-2020"  # Start of 2020 (corresponds to day index 9862)
+    num_days: 365    # Number of days to evaluate (e.g., 365 for one year)
+
+    # Multi-day forecast configuration
+    max_forecast_days: 9  # Maximum forecast lead time (1-9 days)
+
+  # Results and Checkpointing
+  results:
+    save_dir: "results/"
+    model_dir: "results/models/"
+    plot_dir: "results/plots/"
+    metrics_dir: "results/tables/"
+    checkpoint_frequency: 5
+    save_best_only: True
+    resume_checkpoint: null  # Path to checkpoint file to resume training (e.g., "results/models/checkpoint_epoch_50.pt")
+
+  # Visualization Configuration
+  visualization:
+    # Set use_default to True to auto-compute limits from 10th and 90th percentiles
+    # Set to False to use custom vmin/vmax values below
+    use_default: True
+
+    # Custom color axis limits for each variable (only used if use_default is False)
+    vmin:
+      thetao: 28.0
+      so: 32.0
+      uo: -0.5
+      vo: -0.5
+      zos: -0.5
+    vmax:
+      thetao: 31.0
+      so: 35.0
+      uo: 0.5
+      vo: 0.5
+      zos: 0.5

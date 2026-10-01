@@ -1,0 +1,156 @@
+"""Train AFNO ocean model with multi-step autoregressive rollout loss.
+
+Trains experiment AFNO_BoB_Surf_E11 using a 3-step rollout loss.  At each
+training iteration the model is unrolled autoregressively for 3 lead days:
+the ocean prediction from step t is detached and concatenated with the ERA5
+atmospheric forcing for t+1 before the next model call.  The training loss is
+the mean L1 loss over all 3 steps.
+
+This directly penalises cumulative drift during autoregressive rollout —
+unlike standard 1-step training (E00) — and is expected to reduce the warm
+bias that accumulates by lead day +9.
+
+Inputs:
+    --config_file (str): YAML config filename (default: afno_bob_surf_e11.yaml).
+    --opt.epochs (int): Total training epochs (default 150 from config).
+    --opt.lr (float): Learning rate (default 0.001 from config).
+    --device (str): Torch device string (default from config).
+    --results.resume_checkpoint (str): Path to .pt checkpoint for resumption.
+    --name (str): Override experiment name.
+
+Outputs:
+    results/models/AFNO_BoB_Surf_E11.pth          — best model weights.
+    results/models/checkpoint_AFNO_BoB_Surf_E11.pt — full checkpoint.
+    results/experiments/logs/AFNO_BoB_Surf_E11_train_val_losses.csv
+
+Example:
+    conda activate BoB_Surf_2
+    python src/training/scripts/train_afno_multistep.py \\
+        --name AFNO_BoB_Surf_E11 \\
+        --device cuda:0 \\
+        --opt.epochs 150
+"""
+import torch
+import torch.nn as nn
+import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+from configmypy import ConfigPipeline, YamlConfig, ArgparseConfig
+from models.architectures.afno.afnonet import AFNONet
+from data_pipeline.loaders.data_loader import load_and_prepare_data
+from training.trainer import Trainer
+from training.utils.experiment_logger import log_experiment, setup_logging, cleanup_logging
+
+ROLLOUT_STEPS = 3   # number of autoregressive steps per training iteration
+
+
+def main():
+    """Load config and data, initialise multi-step trainer, and run training.
+
+    Args:
+        None: All settings read from config YAML and CLI overrides (see module docstring).
+
+    Returns:
+        None: Writes model checkpoints and loss CSV as side effects.
+
+    Example:
+        >>> # python src/training/scripts/train_afno_multistep.py --device cuda:0
+    """
+    print("=== Multi-step Rollout Training (E11) ===")
+    # Pre-parse --config_file from sys.argv so the experiment YAML can be
+    # loaded explicitly before ArgparseConfig, letting CLI args override it.
+    import argparse as _ap, sys as _sys
+    _pre = _ap.ArgumentParser(add_help=False)
+    _pre.add_argument('--config_file', default=None)
+    _known, _ = _pre.parse_known_args(_sys.argv[1:])
+    _exp_yaml = _known.config_file or 'afno_bob_surf_e11.yaml'
+    pipe = ConfigPipeline([
+        YamlConfig('./afno_bob_surf_e11.yaml', config_name='default', config_folder='config/'),
+        YamlConfig(f'./{_exp_yaml}', config_name='default', config_folder='config/'),
+        ArgparseConfig(infer_types=True, config_name='default', config_file=None),
+    ])
+    config = pipe.read_conf()
+
+    tee_logger = setup_logging(config)
+
+    np.random.seed(config.seed)
+    torch.manual_seed(config.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.cuda.manual_seed_all(config.seed)
+
+    log_experiment(config)
+
+    try:
+        if config.wb:
+            import wandb
+            wandb.init(project='AFNO for Bay of Bengal',
+                       name=f"{config.name}_rollout{ROLLOUT_STEPS}", config=config)
+
+        print(f"\n=== Loading Data (k_steps={ROLLOUT_STEPS}) ===")
+        train_data_loader, val_data_loader, _, mask = load_and_prepare_data(
+            config, k_steps=ROLLOUT_STEPS,
+        )
+        print(f"  Train batches: {len(train_data_loader)}  "
+              f"Val batches: {len(val_data_loader)}")
+
+        print("\n=== Initialising Model ===")
+        model = AFNONet(config).to(config.device)
+        total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print(f"  Trainable parameters: {total_params:,}")
+
+        start_epoch   = 0
+        best_val_loss = float('inf')
+        checkpoint_data = None
+
+        try:
+            _cp = config.results.resume_checkpoint
+        except (KeyError, AttributeError):
+            _cp = None
+        if _cp:
+            cp_path = _cp
+            if Path(cp_path).exists():
+                print(f"\n=== Loading Checkpoint: {cp_path} ===")
+                checkpoint_data = torch.load(cp_path, map_location=config.device,
+                                             weights_only=False)
+                start_epoch   = checkpoint_data['epoch'] + 1
+                best_val_loss = checkpoint_data.get('best_val_loss', float('inf'))
+                additional    = config.opt.epochs
+                config.opt.epochs = start_epoch + additional
+                print(f"  Resuming from epoch {start_epoch}, "
+                      f"training {additional} more epochs")
+
+        optimizer = torch.optim.AdamW(model.parameters(),
+                                      lr=config.opt.lr,
+                                      weight_decay=config.opt.weight_decay)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min')
+
+        if checkpoint_data is not None:
+            model.load_state_dict(checkpoint_data['model_state_dict'])
+            optimizer.load_state_dict(checkpoint_data['optimizer_state_dict'])
+            scheduler.load_state_dict(checkpoint_data['scheduler_state_dict'])
+
+        loss_fn = nn.L1Loss()
+
+        trainer = Trainer(
+            model=model, mask=mask, config=config,
+            start_epoch=start_epoch, best_val_loss=best_val_loss,
+            rollout_steps=ROLLOUT_STEPS,
+        )
+
+        print(f"\n=== Training (rollout_steps={ROLLOUT_STEPS}, "
+              f"epochs={config.opt.epochs}) ===\n")
+        trainer.train(train_data_loader, val_data_loader, loss_fn, optimizer, scheduler)
+
+        if config.wb:
+            import wandb
+            wandb.finish()
+
+    finally:
+        cleanup_logging(tee_logger)
+
+
+if __name__ == '__main__':
+    main()

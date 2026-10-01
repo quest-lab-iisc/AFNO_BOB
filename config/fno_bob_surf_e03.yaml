@@ -1,0 +1,116 @@
+# E03: FNO retrain with north_mask_rows=0 (no northern boundary masking)
+default : &DEFAULT
+
+  # General Settings
+  name: 'FNO_BoB_Surf_E03'  # Experiment name
+  verbose: True
+  device: 'cuda:0'
+  seed: 42
+  min_epoch: 0
+  wb: False  # Weights & Biases logging
+  rmse: 1
+  per: False
+
+
+  # Model Architecture - FNO (Fourier Neural Operator)
+  fno:
+    n_modes: [16, 16]                    # Number of Fourier modes per dimension (spatial)
+    hidden_channels: 64                  # Width of hidden layers
+    lifting_channel_ratio: 2             # Channel expansion ratio for lifting (input projection)
+    projection_channel_ratio: 2          # Channel expansion ratio for output projection
+    n_layers: 4                          # Number of FNO layers
+    non_linearity: 'gelu'                # Activation function: gelu, relu, tanh
+    use_channel_mlp: True                # Use channel MLP layers
+    channel_mlp_expansion: 0.5           # Channel MLP expansion ratio
+    channel_mlp_dropout: 0.1             # Dropout in channel MLP layers
+    channel_mlp_skip: 'soft-gating'      # Skip connection type: linear, identity, soft-gating, None
+    fno_skip: 'linear'                   # FNO skip connection: linear, identity, soft-gating, None
+    positional_embedding: 'grid'         # Positional embedding type
+    norm: null                           # Normalization: ada_in (requires ada_in_features), group_norm, instance_norm, or null
+
+  # Optimizer Settings
+  opt:
+    epochs: 250
+    lr: 1e-3
+    weight_decay: 1e-5
+    scheduler: 'ReduceLROnPlateau'
+    scheduler_T_max: 50        # For CosineAnnealingLR
+    step_size: 15              # For StepLR
+    gamma: 0.1                 # For StepLR
+
+  # Dataset Configuration
+  data:
+    # Use absolute paths to source data (no need to copy files)
+    data_dir: "data/1993_2020/"
+    file_prefix: ocean
+    file_prefix_atm: atm
+
+    # Variables
+    variable: ['thetao','so','uo','vo','zos']
+    atm_variable: ['ssr','tp','u10','v10','msl','tcc']
+    out_variable: ['thetao','so','uo','vo','zos']
+
+    # *** Data split by years ***
+    train_years: [1993, 2018]  # Training data year range [start, end] inclusive
+    validate_year: 2019         # Validation year
+    test_years: [2020]          # Test years (list allows multiple test years)
+
+    # Select specific months (1-12) for each split, or use all months
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    # Spatial configuration
+    img_size: [224, 224]
+    north_mask_rows: 0          # No northern boundary masking (E03 onwards)
+
+    # Channel configuration
+    in_chs: 11      # 6 atmospheric + 5 ocean
+    atm_chs: 6
+    out_chs: 5
+
+    # Training configuration
+    batch_size: 32
+    shuffle: False
+
+    # Normalization statistics (absolute path to source)
+    mean_dir: "data/1993_2020/mean/"
+
+  # Plotting Configuration
+  plot:
+    reference_date: "01-01-1993"  # Format: dd-mm-yyyy
+    input_date: "09-07-2020"
+    num_days: 9
+
+  # Model Evaluation Configuration
+  evaluation:
+    reference_date: "01-01-1993"
+    start_date: "01-01-2020"
+    num_days: 365
+    max_forecast_days: 9
+
+  # Results and Checkpointing
+  results:
+    save_dir: "results/"
+    model_dir: "results/models/"
+    plot_dir: "results/plots/"
+    metrics_dir: "results/tables/"
+    checkpoint_frequency: 5
+    save_best_only: True
+    resume_checkpoint: null
+
+  # Visualization Configuration
+  visualization:
+    use_default: True
+    vmin:
+      thetao: 28.0
+      so: 32.0
+      uo: -0.5
+      vo: -0.5
+      zos: -0.5
+    vmax:
+      thetao: 31.0
+      so: 35.0
+      uo: 0.5
+      vo: 0.5
+      zos: 0.5

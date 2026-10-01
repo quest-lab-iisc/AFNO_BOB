@@ -1,0 +1,149 @@
+default : &DEFAULT
+
+  # General Settings
+  name: 'AFNO_AtmOcean_E02'  # Experiment name
+  verbose: True
+  device: 'cuda:0'  # Device to use for training/testing
+  seed: 42
+  min_epoch: 0
+  wb: False  # Weights & Biases logging
+  rmse: 1
+  per: False
+
+
+  # Model Architecture - AFNO2D
+  afno2d:
+    hidden_size: 192
+    sparsity_threshold: 0.01
+    num_blocks: 3
+    hard_thresholding_fraction: 1
+    hidden_size_factor: 1
+    double_skip: True
+    drop_path: 0
+    mlp_ratio: 2
+    n_blocks: 3
+    attn_heads: 4
+
+  # MLP Configuration
+  mlp:
+    in_features: 192
+    hidden_features: 768
+    out_features: 192
+    drop: 0.1
+
+  # Optimizer Settings
+  opt:
+    epochs: 100
+    lr: 1e-3
+    weight_decay: 1e-5
+    scheduler: 'ReduceLROnPlateau'
+    step_size: 15
+    gamma: 0.1
+
+  # Dataset Configuration
+  data:
+    # Use absolute paths to source data (no need to copy files)
+    data_dir: "data/1993_2020/"
+    file_prefix: ocean
+    file_prefix_atm: atm
+
+    # Variables
+    variable: ['thetao','so','uo','vo','zos']
+    atm_variable: ['ssr','tp','u10','v10','msl','tcc']
+    # Both atmospheric and ocean outputs
+    out_variable: ['ssr','tp','u10','v10','msl','tcc','thetao','so','uo','vo','zos']
+
+    # *** ENHANCED: Data split by years ***
+    train_years: [1993, 2018]  # Training data year range [start, end] inclusive
+    validate_year: 2019         # Validation year
+    test_years: [2020]          # Test years (list allows multiple test years)
+
+    # Select specific months (1-12) for each split, or use all months
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    # Spatial configuration
+    img_size: [224,224]
+    north_mask_rows: 0
+    patch_size: [8,8]
+
+    # Channel configuration: 11 in, 11 out (coupled atm + ocean)
+    in_chs: 11      # 6 atmospheric + 5 ocean
+    atm_chs: 6
+    out_chs: 11     # 6 atmospheric + 5 ocean
+
+    # Model configuration
+    emd_dim: 192
+    drop_rate: 0
+    pos_drop_rate: 0
+    drop_path_rate: 0
+    dynamic_size: True
+
+    # Training configuration
+    batch_size: 32
+    shuffle: False
+
+    # Normalization statistics (absolute path to source)
+    mean_dir: "data/1993_2020/mean/"
+
+  # Plotting Configuration
+  plot:
+    # Reference date (first day in dataset) - DO NOT CHANGE
+    reference_date: "01-01-1993"  # Format: dd-mm-yyyy
+
+    # Input date for plotting (format: dd-mm-yyyy)
+    input_date: "09-07-2020"
+
+    # Number of days for autoregressive prediction
+    num_days: 9
+
+  # Model Evaluation Configuration
+  evaluation:
+    # Reference date for day index calculation (first day in dataset)
+    reference_date: "01-01-1993"  # Format: dd-mm-yyyy
+
+    # Evaluation period
+    start_date: "01-01-2020"
+    num_days: 365
+
+    # Multi-day forecast configuration
+    max_forecast_days: 9
+
+  # Results and Checkpointing
+  results:
+    save_dir: "results/"
+    model_dir: "results/models/"
+    plot_dir: "results/plots/"
+    metrics_dir: "results/tables/"
+    checkpoint_frequency: 5
+    save_best_only: True
+    resume_checkpoint: null
+
+  # Visualization Configuration
+  visualization:
+    use_default: True
+    vmin:
+      ssr: 0.0
+      tp: 0.0
+      u10: -15.0
+      v10: -15.0
+      msl: 99000.0
+      tcc: 0.0
+      thetao: 28.0
+      so: 32.0
+      uo: -0.5
+      vo: -0.5
+      zos: -0.5
+    vmax:
+      ssr: 25000000.0
+      tp: 0.02
+      u10: 15.0
+      v10: 15.0
+      msl: 103000.0
+      tcc: 1.0
+      thetao: 31.0
+      so: 35.0
+      uo: 0.5
+      vo: 0.5
+      zos: 0.5

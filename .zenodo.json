@@ -1,0 +1,40 @@
+{
+  "title": "AFNO_BOB v2.0: Fourier neural operators for Bay of Bengal surface ocean forecasting",
+  "version": "v2.0",
+  "upload_type": "software",
+  "license": "cc-by-4.0",
+  "creators": [
+    {
+      "name": "Rishi, J.",
+      "affiliation": "Indian Institute of Science",
+      "orcid": "0009-0004-5285-6908"
+    },
+    {
+      "name": "Subramani, Deepak N.",
+      "affiliation": "Indian Institute of Science",
+      "orcid": "0000-0002-5972-8878"
+    }
+  ],
+  "description": "<p>Code and configurations for J. Rishi and D. N. Subramani, \"Adaptive Fourier neural operators for ensemble forecasting of the Bay of Bengal surface ocean\". Four Fourier-family neural operators (AFNO, FNO, TFNO, U-NO), each trained with single-step and three-step rollout objectives, forecast daily sea surface temperature, salinity, height and currents in the Bay of Bengal from GLORYS12 and ERA5 reanalyses. They are evaluated on 2060 nine-day hindcasts over 2020-2025, and the code includes 50-member ensemble forecasts driven by TIGGE atmospheric ensembles.</p><p>The trained models, ancillary data, training checkpoints and evaluation outputs are available from the Dropbox link in README.md. README.md describes installation and data preparation, and REPRODUCE.md gives the commands for every table and figure.</p><p>Funding: Ministry of Earth Sciences (MoES), Government of India, grant MoES/36/OOIS/Extra/84/2022.</p>",
+  "keywords": [
+    "neural operators",
+    "adaptive Fourier neural operator",
+    "ocean forecasting",
+    "Bay of Bengal",
+    "ensemble forecasting",
+    "machine learning"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.22541/essoar.175003345.56652787/v1",
+      "relation": "isSupplementTo",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://github.com/quest-lab-iisc/AFNO_BOB/tree/v2.0",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ],
+  "notes": "Funded by the Ministry of Earth Sciences (MoES), Government of India, grant MoES/36/OOIS/Extra/84/2022."
+}

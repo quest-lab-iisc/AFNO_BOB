@@ -1,0 +1,39 @@
+# Plot Configuration File - Percentile Mode
+# This example uses automatic colorbar limits based on data percentiles
+
+# Model name (must exist in runtable.csv)
+model_name: AFNO_BoB_Surf_E08
+
+# Input date for forecast (format: dd-mm-yyyy)
+input_date: 09-07-2020
+
+# Reference date for day index calculation (format: dd-mm-yyyy)
+reference_date: 01-01-1993
+
+# Number of forecast days
+num_days: 9
+
+# Geographic extent (Bay of Bengal)
+lon_range: [80, 100]
+lat_range: [5, 25]
+
+# Colorbar mode: 'percentile' - automatically compute limits from data
+colorbar_mode: percentile
+
+# Percentile for automatic colorbar limits
+# [5, 95] means use 5th percentile as vmin and 95th percentile as vmax
+percentile: [5, 95]
+
+# Percentile for relative difference colorbar
+rel_diff_percentile: [5, 95]
+
+# Colormap for difference plots
+diff_colormap: RdBu_r
+
+# Custom colormaps for each variable
+colormap:
+  thetao: RdYlBu_r
+  so: viridis
+  uo: RdBu_r
+  vo: RdBu_r
+  zos: coolwarm
