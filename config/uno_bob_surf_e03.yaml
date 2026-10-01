@@ -1,0 +1,136 @@
+# E03: UNO retrain with north_mask_rows=0 (no northern boundary masking)
+default : &DEFAULT
+
+  # General Settings
+  name: 'UNO_BoB_Surf_E03'  # Experiment name
+  verbose: True
+  device: 'cuda:1'
+  seed: 42
+  min_epoch: 0
+  wb: False  # Weights & Biases logging
+  rmse: 1
+  per: False
+
+
+  # Model Architecture - UNO (U-shaped Neural Operator)
+  # UNO uses a U-Net-like architecture with Fourier layers and skip connections
+  uno:
+    hidden_channels: 64                  # Initial width of the UNO (affects model capacity)
+    lifting_channels: 128                # Channels in the lifting block (input projection)
+    projection_channels: 128             # Channels in the projection block (output projection)
+    n_layers: 5                          # Number of Fourier layers in the UNO
+
+    # UNO-specific layer configurations
+    # For a 5-layer UNO with U-Net structure (down-down-bottleneck-up-up)
+    uno_out_channels: [32, 64, 64, 64, 32]
+    uno_n_modes: [[16, 16], [8, 8], [8, 8], [8, 8], [16, 16]]
+    uno_scalings: [[1.0, 1.0], [0.5, 0.5], [1.0, 1.0], [1.0, 1.0], [2.0, 2.0]]
+
+    # Horizontal skip connections (U-Net style): {to_layer: from_layer}
+    horizontal_skips_map: {4: 0, 3: 1}
+
+    # Activation and Normalization
+    non_linearity: 'gelu'
+    norm: null
+
+    # MLP Configuration
+    channel_mlp_dropout: 0.1
+    channel_mlp_expansion: 0.5
+
+    # Skip Connection Types
+    fno_skip: 'linear'
+    horizontal_skip: 'linear'
+    channel_mlp_skip: 'linear'
+
+    # Positional Embedding
+    positional_embedding: 'grid'
+
+    # Advanced Options
+    preactivation: False
+    separable: False
+    factorization: null
+    rank: 1.0
+    domain_padding: null
+
+  # Optimizer Settings
+  opt:
+    epochs: 250
+    lr: 1e-3
+    weight_decay: 1e-5
+    scheduler: 'ReduceLROnPlateau'
+    scheduler_T_max: 50
+    step_size: 15
+    gamma: 0.1
+
+  # Dataset Configuration
+  data:
+    data_dir: "data/1993_2020/"
+    file_prefix: ocean
+    file_prefix_atm: atm
+
+    # Variables
+    variable: ['thetao','so','uo','vo','zos']
+    atm_variable: ['ssr','tp','u10','v10','msl','tcc']
+    out_variable: ['thetao','so','uo','vo','zos']
+
+    # *** Data split by years ***
+    train_years: [1993, 2018]
+    validate_year: 2019
+    test_years: [2020]
+
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    # Spatial configuration
+    img_size: [224, 224]
+    north_mask_rows: 0          # No northern boundary masking (E03 onwards)
+
+    # Channel configuration
+    in_chs: 11      # 6 atmospheric + 5 ocean
+    atm_chs: 6
+    out_chs: 5
+
+    batch_size: 32
+    shuffle: False
+
+    mean_dir: "data/1993_2020/mean/"
+
+  # Plotting Configuration
+  plot:
+    reference_date: "01-01-1993"
+    input_date: "09-07-2020"
+    num_days: 9
+
+  # Model Evaluation Configuration
+  evaluation:
+    reference_date: "01-01-1993"
+    start_date: "01-01-2020"
+    num_days: 365
+    max_forecast_days: 9
+
+  # Results and Checkpointing
+  results:
+    save_dir: "results/"
+    model_dir: "results/models/"
+    plot_dir: "results/plots/"
+    metrics_dir: "results/tables/"
+    checkpoint_frequency: 5
+    save_best_only: True
+    resume_checkpoint: null
+
+  # Visualization Configuration
+  visualization:
+    use_default: True
+    vmin:
+      thetao: 28.0
+      so: 32.0
+      uo: -0.5
+      vo: -0.5
+      zos: -0.5
+    vmax:
+      thetao: 31.0
+      so: 35.0
+      uo: 0.5
+      vo: 0.5
+      zos: 0.5

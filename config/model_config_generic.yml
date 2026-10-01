@@ -1,0 +1,44 @@
+# Model Configuration
+model:
+  name: "my_model"
+  architecture: "resnet50"  # Example architecture
+  input_shape: [224, 224, 3]
+  num_classes: 10
+
+# Training Configuration
+training:
+  batch_size: 32
+  epochs: 100
+  learning_rate: 0.001
+  optimizer: "adam"
+  loss: "categorical_crossentropy"
+  
+  # Callbacks
+  early_stopping:
+    enabled: true
+    patience: 10
+    monitor: "val_loss"
+  
+  checkpoint:
+    enabled: true
+    save_best_only: true
+    monitor: "val_accuracy"
+
+# Data Configuration
+data:
+  train_path: "data/processed/train"
+  val_path: "data/processed/val"
+  test_path: "data/processed/test"
+  
+  augmentation:
+    enabled: true
+    rotation_range: 15
+    width_shift_range: 0.1
+    height_shift_range: 0.1
+    horizontal_flip: true
+
+# Logging
+logging:
+  log_dir: "logs"
+  tensorboard: true
+  save_frequency: 1  # Save every N epochs

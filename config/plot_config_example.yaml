@@ -1,0 +1,68 @@
+# Plot Configuration File
+# This file configures the make_plots.py script for generating ocean forecast visualizations
+
+# Model name (must exist in runtable.csv)
+model_name: AFNO_BoB_Surf_E00
+#AFNO_BoB_Surf_E06p1
+
+# Input date for forecast (format: dd-mm-yyyy)
+input_date: 09-07-2020
+
+# Reference date for day index calculation (format: dd-mm-yyyy)
+reference_date: 01-01-1993
+
+# Number of forecast days
+num_days: 9
+
+# Geographic extent (Bay of Bengal)
+lon_range: [80, 100]
+lat_range: [5, 25]
+
+# Colorbar mode: 'percentile' or 'fixed'
+# - 'percentile': Automatically compute limits from data using percentiles (default)
+# - 'fixed': Use manually specified limits from plot_limits section below
+colorbar_mode: percentile
+
+# Percentile for automatic colorbar limits (used when colorbar_mode='percentile')
+# Default: [5, 95] means 5th and 95th percentile
+percentile: [5, 95]
+
+# Percentile for relative difference colorbar (default: [5, 95])
+rel_diff_percentile: [5, 95]
+
+# Colormap for difference plots (blue to red with white at 0)
+diff_colormap: RdBu_r
+
+# Custom colormaps for each variable
+# Defaults if not specified:
+# - thetao (SST): RdYlBu_r
+# - so (SSS): viridis
+# - uo/vo (currents): RdBu_r
+# - zos (SSH): coolwarm
+colormap:
+  thetao: RdYlBu_r
+  so: viridis
+  uo: RdBu_r
+  vo: RdBu_r
+  zos: coolwarm
+
+# Fixed colorbar limits for each variable (used when colorbar_mode='fixed')
+# Note: For SSC (sea surface currents), the magnitude is computed from uo and vo,
+# and the limits from 'uo' are used for the magnitude colorbar.
+# Set colorbar_mode='fixed' above to use these values
+plot_limits:
+  thetao:  # Sea Surface Temperature
+    vmin: 26.0
+    vmax: 32.0
+  so:      # Sea Surface Salinity
+    vmin: 30.0
+    vmax: 35.0
+  uo:      # Zonal current (also used for SSC magnitude)
+    vmin: 0.0
+    vmax: 0.5
+  vo:      # Meridional current
+    vmin: -0.5
+    vmax: 0.5
+  zos:     # Sea Surface Height
+    vmin: -0.5
+    vmax: 0.5

@@ -1,0 +1,93 @@
+# Configuration for FNO_BoB_Surf_E01
+# Auto-generated from runtable.csv
+
+default: &DEFAULT
+
+  # AFNO2D Configuration
+  afno2d:
+    hidden_size: [16, 16]
+    sparsity_threshold: 64
+    num_blocks: 2
+    hard_thresholding_fraction: 2
+    hidden_size_factor: 4
+    double_skip: gelu
+    drop_path: True
+    mlp_ratio: 0.5
+    n_blocks: 0.1
+    attn_heads: soft-gating
+
+  # MLP Configuration
+  mlp:
+    in_features: linear
+    hidden_features: grid
+    out_features: null
+    drop: 100
+
+  # OPT Configuration
+  opt:
+    epochs: 0.001
+    lr: 1e-05
+    weight_decay: ReduceLROnPlateau
+    scheduler: 50
+    step_size: 15
+    gamma: 0.1
+
+  # DATA Configuration
+  data:
+    data_dir: data/1993_2020/
+    file_prefix: ocean
+    file_prefix_atm: atm
+    variable: ['thetao', 'so', 'uo', 'vo', 'zos']
+    atm_variable: ['ssr', 'tp', 'u10', 'v10', 'msl', 'tcc']
+    out_variable: ['thetao', 'so', 'uo', 'vo', 'zos']
+    train_years: [1993, 2018]
+    validate_year: 2019
+    test_years: [2020]
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    img_size: [224, 224]
+    patch_size: 11
+    in_chs: 6
+    atm_chs: 5
+    out_chs: 32
+    emd_dim: False
+    drop_rate: data/1993_2020/mean/
+    pos_drop_rate: 01-01-1993
+    drop_path_rate: 09-07-2020
+    dynamic_size: 9
+    batch_size: 01-01-1993
+    shuffle: 01-01-2020
+    mean_dir: 365
+
+  # PLOT Configuration
+  plot:
+    reference_date: 9
+    input_date: results/
+    num_days: results/models/
+
+  # EVALUATION Configuration
+  evaluation:
+    reference_date: results/plots/
+    start_date: results/tables/
+    num_days: 5
+    max_forecast_days: True
+
+  # RESULTS Configuration
+  results:
+    save_dir: null
+    model_dir: True
+    plot_dir: 28.0
+    metrics_dir: 32.0
+    checkpoint_frequency: -0.5
+    save_best_only: -0.5
+
+  # General Settings
+  name: FNO_BoB_Surf_E01
+  verbose: True
+  device: 'cuda:0'
+  seed: 42
+  min_epoch: 0
+  wb: False
+  rmse: 1
+  per: False

@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this code or the trained models, please cite them as below."
+title: "AFNO_BOB: Fourier neural operators for Bay of Bengal surface ocean forecasting"
+version: "2.0"
+date-released: 2026-10-01
+license: CC-BY-4.0
+repository-code: "https://github.com/quest-lab-iisc/AFNO_BOB"
+authors:
+  - family-names: Rishi
+    given-names: J.
+    affiliation: "Department of Computational and Data Sciences, Indian Institute of Science, Bengaluru, India"
+    orcid: "https://orcid.org/0009-0004-5285-6908"
+  - family-names: Subramani
+    given-names: Deepak N.
+    affiliation: "Department of Computational and Data Sciences, Indian Institute of Science, Bengaluru, India"
+    orcid: "https://orcid.org/0000-0002-5972-8878"
+    email: deepakns@iisc.ac.in
+keywords:
+  - neural operators
+  - adaptive Fourier neural operator
+  - ocean forecasting
+  - Bay of Bengal
+  - ensemble forecasting

@@ -1,0 +1,56 @@
+# Plot Configuration File - Fixed Limits Mode
+# This example uses manually specified colorbar limits
+
+# Model name (must exist in runtable.csv)
+model_name: AFNO_BoB_Surf_E08
+
+# Input date for forecast (format: dd-mm-yyyy)
+input_date: 09-07-2020
+
+# Reference date for day index calculation (format: dd-mm-yyyy)
+reference_date: 01-01-1993
+
+# Number of forecast days
+num_days: 9
+
+# Geographic extent (Bay of Bengal)
+lon_range: [80, 100]
+lat_range: [5, 25]
+
+# Colorbar mode: 'fixed' - use manually specified limits from plot_limits
+colorbar_mode: fixed
+
+# Percentile for relative difference colorbar
+rel_diff_percentile: [5, 95]
+
+# Colormap for difference plots
+diff_colormap: RdBu_r
+
+# Custom colormaps for each variable
+colormap:
+  thetao: RdYlBu_r
+  so: viridis
+  uo: RdBu_r
+  vo: RdBu_r
+  zos: coolwarm
+
+# Fixed colorbar limits for each variable
+# These values will be used when colorbar_mode='fixed'
+# Note: For SSC (sea surface currents), the magnitude is computed from uo and vo,
+# and the limits from 'uo' are used for the magnitude colorbar.
+plot_limits:
+  thetao:  # Sea Surface Temperature
+    vmin: 26.0
+    vmax: 32.0
+  so:      # Sea Surface Salinity
+    vmin: 30.0
+    vmax: 35.0
+  uo:      # Zonal current (also used for SSC magnitude)
+    vmin: 0.0
+    vmax: 0.5
+  vo:      # Meridional current
+    vmin: -0.5
+    vmax: 0.5
+  zos:     # Sea Surface Height
+    vmin: -0.5
+    vmax: 0.5

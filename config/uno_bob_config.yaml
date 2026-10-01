@@ -1,0 +1,159 @@
+default : &DEFAULT
+
+  # General Settings
+  name: 'UNO_BoB_Surf_E01'  # Experiment name
+  verbose: True
+  device: 'cuda:1'
+  seed: 42
+  min_epoch: 0
+  wb: False  # Weights & Biases logging
+  rmse: 1
+  per: False
+
+
+  # Model Architecture - UNO (U-shaped Neural Operator)
+  # UNO uses a U-Net-like architecture with Fourier layers and skip connections
+  uno:
+    hidden_channels: 64                  # Initial width of the UNO (affects model capacity)
+    lifting_channels: 128                # Channels in the lifting block (input projection)
+    projection_channels: 128             # Channels in the projection block (output projection)
+    n_layers: 5                          # Number of Fourier layers in the UNO
+
+    # UNO-specific layer configurations
+    # For a 5-layer UNO with U-Net structure (down-down-bottleneck-up-up)
+    uno_out_channels: [32, 64, 64, 64, 32]         # Output channels for each layer
+    uno_n_modes: [[16, 16], [8, 8], [8, 8], [8, 8], [16, 16]]  # Fourier modes per layer
+    uno_scalings: [[1.0, 1.0], [0.5, 0.5], [1.0, 1.0], [1.0, 1.0], [2.0, 2.0]]  # Scaling factors
+    #uno_scalings: [1.0, 0.5, 1.0, 1.0, 2.0]  # Scaling factors
+
+    # Horizontal skip connections (U-Net style): {to_layer: from_layer}
+    # Layer 4 gets skip from layer 0, layer 3 gets skip from layer 1
+    horizontal_skips_map: {4: 0, 3: 1}
+
+    # Activation and Normalization
+    non_linearity: 'gelu'                # Activation function: gelu, relu, tanh
+    norm: null                           # Normalization: ada_in (requires ada_in_features), group_norm, instance_norm, or null
+
+    # MLP Configuration
+    channel_mlp_dropout: 0.1             # Dropout in channel MLP layers
+    channel_mlp_expansion: 0.5           # Channel MLP expansion ratio
+
+    # Skip Connection Types
+    fno_skip: 'linear'                   # FNO layer skip: linear, identity, soft-gating, None
+    horizontal_skip: 'linear'            # Horizontal (U-Net) skip: linear, identity, soft-gating, None
+    channel_mlp_skip: 'linear'      # Channel MLP skip: linear, identity, soft-gating, None
+
+    # Positional Embedding
+    positional_embedding: 'grid'         # Positional embedding type
+
+    # Advanced Options
+    preactivation: False                 # ResNet-style preactivation
+    separable: False                     # Separable spectral convolution
+    factorization: null                  # Tensor factorization: Tucker, CP, TT, or null
+    rank: 1.0                            # Factorization rank (only used if factorization is not null)
+    domain_padding: null                 # Domain padding percentage or null
+
+  # Optimizer Settings
+  opt:
+    epochs: 100
+    lr: 1e-3
+    weight_decay: 1e-5
+    scheduler: 'ReduceLROnPlateau'
+    scheduler_T_max: 50        # For CosineAnnealingLR
+    step_size: 15              # For StepLR
+    gamma: 0.1                 # For StepLR
+
+  # Dataset Configuration
+  data:
+    # Use absolute paths to source data (no need to copy files)
+    data_dir: "data/1993_2020/"
+    file_prefix: ocean
+    file_prefix_atm: atm
+
+    # Variables
+    variable: ['thetao','so','uo','vo','zos']
+    atm_variable: ['ssr','tp','u10','v10','msl','tcc']
+    out_variable: ['thetao','so','uo','vo','zos']
+
+    # *** Data split by years ***
+    train_years: [1993, 2018]  # Training data year range [start, end] inclusive
+    validate_year: 2019         # Validation year
+    test_years: [2020]          # Test years (list allows multiple test years)
+
+    # Select specific months (1-12) for each split, or use all months
+    train_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    val_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    test_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    # Spatial configuration
+    img_size: [224, 224]
+    north_mask_rows: 0
+
+    # Channel configuration
+    in_chs: 11      # 6 atmospheric + 5 ocean
+    atm_chs: 6
+    out_chs: 5
+
+    # Training configuration
+    batch_size: 32
+    shuffle: False
+
+    # Normalization statistics (absolute path to source)
+    mean_dir: "data/1993_2020/mean/"
+
+  # Plotting Configuration
+  plot:
+    # Reference date (first day in dataset) - DO NOT CHANGE
+    reference_date: "01-01-1993"  # Format: dd-mm-yyyy
+
+    # Input date for plotting (format: dd-mm-yyyy)
+    # This will be converted to day index relative to reference_date
+    # Used for: predictions, ocean variables, and all visualizations
+    input_date: "09-07-2020"  # Example: corresponds to day index 10021
+
+    # Number of days for autoregressive prediction
+    num_days: 9
+
+  # Model Evaluation Configuration
+  evaluation:
+    # Reference date for day index calculation (first day in dataset)
+    reference_date: "01-01-1993"  # Format: dd-mm-yyyy
+
+    # Evaluation period
+    # start_date: Starting date for evaluation (format: dd-mm-yyyy)
+    # This will be converted to day index relative to reference_date
+    start_date: "01-01-2020"  # Start of 2020 (corresponds to day index 9862)
+    num_days: 365    # Number of days to evaluate (e.g., 365 for one year)
+
+    # Multi-day forecast configuration
+    max_forecast_days: 9  # Maximum forecast lead time (1-9 days)
+
+  # Results and Checkpointing
+  results:
+    save_dir: "results/"
+    model_dir: "results/models/"
+    plot_dir: "results/plots/"
+    metrics_dir: "results/tables/"
+    checkpoint_frequency: 5
+    save_best_only: True
+    resume_checkpoint: null  # Path to checkpoint file to resume training (e.g., "results/models/checkpoint_epoch_50.pt")
+
+  # Visualization Configuration
+  visualization:
+    # Set use_default to True to auto-compute limits from 10th and 90th percentiles
+    # Set to False to use custom vmin/vmax values below
+    use_default: True
+
+    # Custom color axis limits for each variable (only used if use_default is False)
+    vmin:
+      thetao: 28.0
+      so: 32.0
+      uo: -0.5
+      vo: -0.5
+      zos: -0.5
+    vmax:
+      thetao: 31.0
+      so: 35.0
+      uo: 0.5
+      vo: 0.5
+      zos: 0.5
